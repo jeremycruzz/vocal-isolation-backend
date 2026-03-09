@@ -1,0 +1,7 @@
+torch>=2.0
+numpy
+soundfile
+scipy
+fastapi>=0.100
+uvicorn[standard]>=0.22
+python-multipart
