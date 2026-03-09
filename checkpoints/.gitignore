@@ -1,3 +1,2 @@
-# Checkpoint files are large; copy best.pt here from parent repo
 *.pt
 !README.md

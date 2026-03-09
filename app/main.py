@@ -127,10 +127,18 @@ def _run_separation(job_id: str, contents: bytes, filename: str, model: str) -> 
 def root():
     return {
         "message": "Stem separation API. POST /separate with an audio file.",
-        "models": {
-            "stems": "?model=stems (default) → vocals, drums, bass, other",
-            "vocals": "?model=vocals → vocals, accompaniment",
-        },
+        "models": [
+            {
+                "id": "stems",
+                "name": "Stems",
+                "description": "4-stem separation: vocals, drums, bass, other.",
+            },
+            {
+                "id": "vocals",
+                "name": "Vocals",
+                "description": "Vocals and accompaniment only.",
+            },
+        ],
     }
 
 
