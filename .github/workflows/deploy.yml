@@ -67,5 +67,6 @@ jobs:
             docker pull \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
             docker pull \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
             docker run -d --name cap-backend --network cap-net --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
-            docker run -d --name cap-nginx --network cap-net -p 80:80 --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
+            mkdir -p /var/www/certbot
+            docker run -d --name cap-nginx --network cap-net -p 80:80 -p 443:443 -v /etc/letsencrypt:/etc/letsencrypt:ro -v /var/www/certbot:/var/www/certbot:ro --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
           '"

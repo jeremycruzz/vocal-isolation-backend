@@ -29,7 +29,13 @@ GitHub Actions builds the Docker image, pushes to ECR, then SSHs to EC2 to pull 
 3. Install AWS CLI v2 on the instance (for `aws ecr get-login-password`).
 4. Add your SSH public key to the instance.
 5. Open port 80 (and 443 for HTTPS) in the security group. Port 8000 does not need to be open to the internet when nginx on the same instance proxies to the backend.
-6. **HTTPS (recommended):** If serving the site from this instance, add a domain and use Let's Encrypt (e.g. `certbot --nginx -d yourdomain.com`). See the frontend repo's `docs/AWS_SETUP_GUIDE.md` Part 5 (HTTPS with Let's Encrypt).
+6. **HTTPS (recommended):** The nginx container mounts `/etc/letsencrypt` from the host. Get certs first (one-time):
+   ```bash
+   sudo apt install -y certbot
+   sudo mkdir -p /var/www/certbot
+   sudo certbot certonly --webroot -w /var/www/certbot -d jeremycruz.com -d www.jeremycruz.com
+   ```
+   For renewal, add a cron job: `certbot renew --webroot -w /var/www/certbot --quiet`
 7. Add the secrets and variables in GitHub.
 
 The workflow will run `docker pull` and `docker run` on the EC2 instance. Ensure checkpoints are in the image or mounted via a volume.
