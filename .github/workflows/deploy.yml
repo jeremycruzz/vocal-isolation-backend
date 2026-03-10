@@ -19,7 +19,7 @@ jobs:
 
       - uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push
+      - name: Build and push backend
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
@@ -27,6 +27,15 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Build and push nginx
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_NGINX_REPOSITORY: ${{ secrets.ECR_NGINX_REPOSITORY }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:${{ github.sha }} -t $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:latest ./nginx
+          docker push $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:latest
 
       - uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -36,16 +45,22 @@ jobs:
         env:
           ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          ECR_NGINX_REPOSITORY: ${{ secrets.ECR_NGINX_REPOSITORY }}
           AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
           EC2_HOST: ${{ vars.EC2_HOST }}
           EC2_USER: ${{ vars.EC2_USER }}
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-          ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST "ECR_REGISTRY='$ECR_REGISTRY' ECR_REPOSITORY='$ECR_REPOSITORY' AWS_REGION='$AWS_REGION' bash -c '
+          ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST "ECR_REGISTRY='$ECR_REGISTRY' ECR_REPOSITORY='$ECR_REPOSITORY' ECR_NGINX_REPOSITORY='$ECR_NGINX_REPOSITORY' AWS_REGION='$AWS_REGION' bash -c '
             aws ecr get-login-password --region \"\$AWS_REGION\" | docker login --username AWS --password-stdin \"\$ECR_REGISTRY\"
+            docker network create cap-net 2>/dev/null || true
             docker pull \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
             docker stop cap-backend 2>/dev/null || true
             docker rm cap-backend 2>/dev/null || true
-            docker run -d --name cap-backend -p 8000:8000 --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
+            docker run -d --name cap-backend --network cap-net --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
+            docker pull \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
+            docker stop cap-nginx 2>/dev/null || true
+            docker rm cap-nginx 2>/dev/null || true
+            docker run -d --name cap-nginx --network cap-net -p 80:80 --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
           '"
