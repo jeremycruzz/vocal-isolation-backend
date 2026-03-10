@@ -42,11 +42,10 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-          ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST \
-            "ECR_REGISTRY='$ECR_REGISTRY' ECR_REPOSITORY='$ECR_REPOSITORY' AWS_REGION='$AWS_REGION' bash -s" << 'REMOTE'
-          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
-          docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
-          docker stop cap-backend 2>/dev/null || true
-          docker rm cap-backend 2>/dev/null || true
-          docker run -d --name cap-backend -p 8000:8000 --restart unless-stopped "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
-REMOTE
+          ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST "ECR_REGISTRY='$ECR_REGISTRY' ECR_REPOSITORY='$ECR_REPOSITORY' AWS_REGION='$AWS_REGION' bash -c '
+            aws ecr get-login-password --region \"\$AWS_REGION\" | docker login --username AWS --password-stdin \"\$ECR_REGISTRY\"
+            docker pull \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
+            docker stop cap-backend 2>/dev/null || true
+            docker rm cap-backend 2>/dev/null || true
+            docker run -d --name cap-backend -p 8000:8000 --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
+          '"
