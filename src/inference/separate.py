@@ -18,7 +18,7 @@ def load_spectrogram_model(
     """Load vocals-only spectrogram model."""
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ckpt = torch.load(checkpoint_path, map_location=device)
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = ckpt.get("config", {})
     model = SpectrogramVocalSeparator(
         n_fft=config.get("n_fft", 2048),
@@ -124,7 +124,7 @@ def load_spectrogram_stems_model(
 ) -> SpectrogramStemsSeparator:
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ckpt = torch.load(checkpoint_path, map_location=device)
+    ckpt = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = ckpt.get("config", {})
     model = SpectrogramStemsSeparator(
         n_fft=config.get("n_fft", 2048),
