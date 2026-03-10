@@ -10,8 +10,11 @@ services:
       context: ../cap-frontend
       dockerfile: Dockerfile
       args:
-        VITE_SEPARATE_API_URL: http://localhost:8000
-        VITE_API_URL: http://localhost:3000
+        # Same origin so nginx proxies /separate to api
+        VITE_SEPARATE_API_URL: http://localhost:8080
+        VITE_API_URL: http://localhost:8080
     ports:
-      - "80:80"
+      - "8080:80"
+    depends_on:
+      - api
     restart: unless-stopped

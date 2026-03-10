@@ -3,10 +3,13 @@ import asyncio
 import io
 import json
 import logging
+import re
 import sys
 import uuid
 import zipfile
 from pathlib import Path
+from urllib.parse import quote
+import unicodedata
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
@@ -85,6 +88,23 @@ def _write_stems_zip(stems: dict, rate: int, filename_stem: str, zip_name: str) 
             zf.writestr(f"{name}.wav", wav_buf.getvalue())
     buf.seek(0)
     return buf
+
+
+def _content_disposition_attachment(filename: str) -> str:
+    """
+    Build a Content-Disposition value that works with Starlette's latin-1 header encoding.
+    Includes both ASCII fallback filename= and RFC5987 filename*=UTF-8''... for full fidelity.
+    """
+    filename = (filename or "stems.zip").strip()
+    # ASCII-ish fallback for `filename="..."` (latin-1 safe, conservative chars).
+    normalized = unicodedata.normalize("NFKD", filename)
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    fallback = re.sub(r"[^A-Za-z0-9._-]+", "_", normalized).strip("._-") or "stems"
+    if not fallback.lower().endswith(".zip"):
+        fallback = f"{fallback}.zip"
+    # RFC5987 encoding is ASCII only (percent-encoded UTF-8).
+    encoded = quote(filename, safe="")
+    return f'attachment; filename="{fallback}"; filename*=UTF-8\'\'{encoded}'
 
 
 def _run_separation(job_id: str, contents: bytes, filename: str, model: str) -> None:
@@ -180,7 +200,7 @@ async def separate(
         return StreamingResponse(
             buf,
             media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={stem_name}_stems.zip"},
+            headers={"Content-Disposition": _content_disposition_attachment(f"{stem_name}_stems.zip")},
         )
     else:
         estimator = get_estimator_vocals()
@@ -189,7 +209,7 @@ async def separate(
         return StreamingResponse(
             buf,
             media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={stem_name}_vocals.zip"},
+            headers={"Content-Disposition": _content_disposition_attachment(f"{stem_name}_vocals.zip")},
         )
 
 
@@ -259,5 +279,5 @@ async def separate_result(job_id: str):
     return StreamingResponse(
         io.BytesIO(j["result"]),
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": _content_disposition_attachment(filename)},
     )
