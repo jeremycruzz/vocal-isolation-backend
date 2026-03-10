@@ -123,8 +123,7 @@ def _run_separation(job_id: str, contents: bytes, filename: str, model: str) -> 
         jobs[job_id]["progress"] = -1
 
 
-@app.get("/")
-def root():
+def _api_info():
     return {
         "message": "Stem separation API. POST /separate with an audio file.",
         "models": [
@@ -140,6 +139,17 @@ def root():
             },
         ],
     }
+
+
+@app.get("/")
+def root():
+    return _api_info()
+
+
+@app.get("/separate/info")
+def separate_info():
+    """Models info at /separate/info so nginx can route it (root / goes to frontend)."""
+    return _api_info()
 
 
 @app.post("/separate")

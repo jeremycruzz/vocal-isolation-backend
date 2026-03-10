@@ -20,26 +20,22 @@ jobs:
       - uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest
-          cache-from: type=registry,ref=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:buildcache,mode=max
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }} -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Build and push nginx
-        uses: docker/build-push-action@v6
-        with:
-          context: ./nginx
-          push: true
-          tags: |
-            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_NGINX_REPOSITORY }}:${{ github.sha }}
-            ${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_NGINX_REPOSITORY }}:latest
-          cache-from: type=registry,ref=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_NGINX_REPOSITORY }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_NGINX_REPOSITORY }}:buildcache,mode=max
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_NGINX_REPOSITORY: ${{ secrets.ECR_NGINX_REPOSITORY }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:${{ github.sha }} -t $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:latest ./nginx
+          docker push $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_NGINX_REPOSITORY:latest
 
       - uses: webfactory/ssh-agent@v0.9.0
         with:
