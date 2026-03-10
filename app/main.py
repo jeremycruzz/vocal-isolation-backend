@@ -112,10 +112,10 @@ def _run_separation(job_id: str, contents: bytes, filename: str, model: str) -> 
             buf = _write_stems_zip(stems, rate, stem_name, f"{stem_name}_vocals.zip")
             zip_filename = f"{stem_name}_vocals.zip"
 
-        jobs[job_id]["progress"] = 100
         jobs[job_id]["message"] = "Building ZIP..."
         jobs[job_id]["result"] = buf.read()
         jobs[job_id]["filename"] = zip_filename
+        jobs[job_id]["progress"] = 100
         logger.info("job %s completed: %s", job_id, zip_filename)
     except Exception as e:
         logger.exception("job %s failed", job_id)
