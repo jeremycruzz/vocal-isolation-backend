@@ -55,12 +55,11 @@ jobs:
           ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST "ECR_REGISTRY='$ECR_REGISTRY' ECR_REPOSITORY='$ECR_REPOSITORY' ECR_NGINX_REPOSITORY='$ECR_NGINX_REPOSITORY' AWS_REGION='$AWS_REGION' bash -c '
             aws ecr get-login-password --region \"\$AWS_REGION\" | docker login --username AWS --password-stdin \"\$ECR_REGISTRY\"
             docker network create cap-net 2>/dev/null || true
+            docker stop cap-backend cap-nginx 2>/dev/null || true
+            docker rm cap-backend cap-nginx 2>/dev/null || true
+            docker image prune -a -f
             docker pull \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
-            docker stop cap-backend 2>/dev/null || true
-            docker rm cap-backend 2>/dev/null || true
-            docker run -d --name cap-backend --network cap-net --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
             docker pull \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
-            docker stop cap-nginx 2>/dev/null || true
-            docker rm cap-nginx 2>/dev/null || true
+            docker run -d --name cap-backend --network cap-net --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_REPOSITORY:latest\"
             docker run -d --name cap-nginx --network cap-net -p 80:80 --restart unless-stopped \"\$ECR_REGISTRY/\$ECR_NGINX_REPOSITORY:latest\"
           '"
