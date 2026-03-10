@@ -6,6 +6,8 @@ __pycache__
 .env
 .env.*
 *.pt
+!checkpoints/spectrogram_stems/best.pt
+!checkpoints/spectrogram/best.pt
 .idea
 .vscode
 *.log

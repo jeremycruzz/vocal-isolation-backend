@@ -1,2 +1,4 @@
 *.pt
+!spectrogram_stems/best.pt
+!spectrogram/best.pt
 !README.md
